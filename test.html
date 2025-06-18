@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SignalR Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@latest/dist/browser/signalr.js"></script>
+</head>
+<body>
+  <h2>SignalR VendingHub Test</h2>
+  <script>
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl("https://localhost:7097/vendinghub?machineKey=Ven1")
+      .withAutomaticReconnect()
+      .build();
+
+    connection.on("Notify", message => {
+      console.log("Notify:", message);
+      alert("Notify: " + message);
+    });
+
+    connection.on("SessionStarted", sessionId => {
+      console.log("Session started:", sessionId);
+      alert("Session ID: " + sessionId);
+    });
+
+    connection.start()
+      .then(() => console.log("Connected to SignalR hub"))
+      .catch(err => console.error("Connection error:", err));
+  </script>
+</body>
+</html>
