@@ -1,5 +1,4 @@
 ﻿using Intravision.Vending.Core.Abstractions.Services;
-using Intravision.Vending.Core.DTO.Brand;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Intravision.Vending.API.Controllers;
@@ -8,12 +7,11 @@ namespace Intravision.Vending.API.Controllers;
 [Route("api/[controller]")]
 public class BrandController : ControllerBase
 {
-    private readonly ILogger<ProductController> _logger;
-
+    private readonly ILogger<BrandController> _logger;
     private readonly IBrandService _brand;
 
     public BrandController(
-        ILogger<ProductController> logger,
+        ILogger<BrandController> logger,
         IBrandService brand)
     {
         _logger = logger;
@@ -21,9 +19,22 @@ public class BrandController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IEnumerable<BrandGetResponse>> GetBrand(
-        CancellationToken token = default)
+    public async Task<IActionResult> GetBrand(CancellationToken token = default)
     {
-        return await _brand.GetAll(token);
+        _logger.LogInformation("Получение списка брендов начато.");
+
+        try
+        {
+            var result = await _brand.GetAll(token);
+
+            _logger.LogInformation("Список брендов получен успешно. Кол-во: {Count}", result?.Count() ?? 0);
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Ошибка при получении списка брендов");
+            return StatusCode(500, new { message = "Ошибка сервера при получении брендов" });
+        }
     }
 }

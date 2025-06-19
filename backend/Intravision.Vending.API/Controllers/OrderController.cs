@@ -20,8 +20,23 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<OrderCreateResponse> Create([FromBody] OrderCreateRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create([FromBody] OrderCreateRequest request, CancellationToken cancellationToken)
     {
-        return await _orderService.CreateOrder(request, cancellationToken);
+        _logger.LogInformation("Создание нового заказа: {@Request}", request);
+
+        try
+        {
+            var response = await _orderService.CreateOrder(request, cancellationToken);
+
+            _logger.LogInformation("Заказ создан успешно: {@Response}", response);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Произошла ошибка при создании заказа");
+            return StatusCode(500, new { message = "Внутренняя ошибка сервера" });
+        }
     }
+
 }

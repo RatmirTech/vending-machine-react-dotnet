@@ -9,6 +9,8 @@ public class VendingHub : Hub
 
     private readonly ILogger<VendingHub> _logger;
 
+    private const string MachineKey = "vm1";
+
     public VendingHub(IVendingSessionService sessionService,
         ILogger<VendingHub> logger)
     {
@@ -18,24 +20,19 @@ public class VendingHub : Hub
 
     public override async Task OnConnectedAsync()
     {
+
+        _logger.LogInformation($"{nameof(VendingHub)} попытка подключения");
+
         var http = Context.GetHttpContext();
-        var machineKey = http?.Request.Query["machineKey"].ToString();
 
-        if (string.IsNullOrEmpty(machineKey) || !IsAvailableMachine(machineKey))
-        {
-            await Clients.Caller.SendAsync("Notify", "Неверный ИД автомата");
-            Context.Abort();
-            return;
-        }
-
-        if (_sessionService.IsLocked(machineKey))
+        if (_sessionService.IsLocked(MachineKey))
         {
             await Clients.Caller.SendAsync("Notify", "Извините, в данный момент автомат занят");
             Context.Abort();
             return;
         }
 
-        var sessionId = _sessionService.StartSession(machineKey, Context.ConnectionId);
+        var sessionId = _sessionService.StartSession(MachineKey, Context.ConnectionId);
         if (sessionId is null)
         {
             await Clients.Caller.SendAsync("Notify", "Не удалось начать сессию");
@@ -44,6 +41,7 @@ public class VendingHub : Hub
         }
 
         await Clients.Caller.SendAsync("SessionStarted", sessionId);
+        _logger.LogInformation($"{nameof(VendingHub)} {sessionId} подключён");
         await base.OnConnectedAsync();
     }
 
@@ -56,14 +54,4 @@ public class VendingHub : Hub
 
         await base.OnDisconnectedAsync(exception);
     }
-
-    public static bool IsAvailableMachine(string? machineKey)
-    {
-        return !string.IsNullOrEmpty(machineKey) && Machines.Contains(machineKey);
-    }
-
-    private static readonly List<string> Machines = new()
-    {
-        "Ven1"
-    };
 }

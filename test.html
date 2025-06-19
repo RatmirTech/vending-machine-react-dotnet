@@ -8,7 +8,7 @@
   <h2>SignalR VendingHub Test</h2>
   <script>
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("http://localhost:5001/vendinghub?machineKey=Ven1")
+      .withUrl("https://localhost:7097/vendinghub?machineKey=Ven1")
       .withAutomaticReconnect()
       .build();
 
