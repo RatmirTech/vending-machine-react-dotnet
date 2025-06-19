@@ -18,16 +18,21 @@ public static class Entry
     /// <param name="services"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentNullException"></exception>
-    public static IServiceCollection AddRepositories(this IServiceCollection services, string efConnectionString)
+    public static IServiceCollection AddRepositories(this IServiceCollection services, string? efConnectionString)
     {
         if (services is null)
         {
             throw new ArgumentNullException(nameof(services));
         }
 
+        if (string.IsNullOrEmpty(efConnectionString))
+        {
+            throw new ArgumentNullException(nameof(efConnectionString));
+        }
+
         services.AddDbContext<EfContext>(o => o.UseNpgsql(connectionString: efConnectionString));
 
-        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
 
         services.AddScoped<IBrandRepository, BrandRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();

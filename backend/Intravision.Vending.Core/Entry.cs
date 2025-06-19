@@ -1,4 +1,5 @@
 ﻿using Intravision.Vending.Core.Abstractions;
+using Intravision.Vending.Core.Abstractions.Services;
 using Intravision.Vending.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,6 +23,12 @@ public static class Entry
         }
 
         services.AddSingleton<IVendingSessionService, VendingSessionService>();
+
+        services.AddTransient<IProductService, ProductService>();
+        services.AddTransient<IBrandService, BrandService>();
+        services.AddTransient<IOrderService, OrderService>();
+
+        services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
         return services;
     }

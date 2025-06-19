@@ -52,7 +52,7 @@ public class EfContext : DbContext
                   .IsRequired()
                   .HasMaxLength(200);
 
-            entity.Property(p => p.PriceInCents)
+            entity.Property(p => p.Price)
                   .IsRequired();
 
             entity.Property(p => p.QuantityInStock)

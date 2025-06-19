@@ -2,6 +2,6 @@
 
 namespace Intravision.Vending.Core.Abstractions.Repositories;
 
-public interface ICoinRepository : IRepository<Coin>
+public interface ICoinRepository : IRepository<Coin, Guid>
 {
 }

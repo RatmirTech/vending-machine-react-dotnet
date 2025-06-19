@@ -1,5 +1,8 @@
-﻿namespace Intravision.Vending.Core.Abstractions.Services;
+﻿using Intravision.Vending.Core.DTO.Brand;
 
-internal interface IBrandService
+namespace Intravision.Vending.Core.Abstractions.Services;
+
+public interface IBrandService
 {
+    Task<IEnumerable<BrandGetResponse>> GetAll(CancellationToken cancellationToken = default);
 }

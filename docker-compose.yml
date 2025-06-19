@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16
+    container_name: vending_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5441:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Intravision.Vending.API/Dockerfile
+    container_name: vending_backend
+    restart: always
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ConnectionStrings__EfContext: ${CONNECTION_STRING}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "5001:8080"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

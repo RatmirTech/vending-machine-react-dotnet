@@ -4,7 +4,7 @@ using Intravision.Vending.DAL.Context;
 
 namespace Intravision.Vending.DAL.Repositories;
 
-public class BrandRepository : Repository<Brand>, IBrandRepository
+public class BrandRepository : Repository<Brand, Guid>, IBrandRepository
 {
     public BrandRepository(EfContext context)
         : base(context)

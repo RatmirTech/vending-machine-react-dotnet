@@ -1,8 +1,9 @@
-﻿using Intravision.Vending.Core.Models;
+﻿using Intravision.Vending.Core.DTO.Product;
+using Intravision.Vending.Core.Models;
 
 namespace Intravision.Vending.Core.Abstractions.Repositories;
 
-public interface IProductRepository : IRepository<Product>
+public interface IProductRepository : IRepository<Product, Guid>
 {
     Task<IEnumerable<Product>> GetFilteredAsync(
     Guid? brandId,
@@ -14,5 +15,3 @@ public interface IProductRepository : IRepository<Product>
         Guid? brandId,
         CancellationToken token = default);
 }
-
-public record PriceRangeDto(int MinPrice, int MaxPrice);

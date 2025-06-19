@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Intravision.Vending.DAL.Repositories;
 
-public class Repository<T> : IRepository<T> where T : class
+public class Repository<T, TKey> : IRepository<T, TKey>
+    where T : class
+    where TKey : notnull
 {
     protected readonly EfContext _context;
     protected readonly DbSet<T> _dbSet;
@@ -15,28 +17,14 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet = _context.Set<T>();
     }
 
-    public async Task<bool> ExistsAsync(string id, CancellationToken token = default)
-    {
-        T? entity = await GetByIdAsync(id);
-        return entity != null;
-    }
-
-    public Task<IEnumerable<T>> FindAsync(Func<T, bool> predicate, CancellationToken token = default)
-    {
-        IEnumerable<T> entities = _dbSet.AsEnumerable().Where(predicate);
-        return Task.FromResult(entities);
-    }
-
     public async Task<IEnumerable<T>> GetAllAsync(CancellationToken token = default)
     {
-        IEnumerable<T> entities = await _dbSet.ToListAsync(token);
-        return entities;
+        return await _dbSet.ToListAsync(token);
     }
 
-    public async Task<T?> GetByIdAsync(string id, CancellationToken token = default)
+    public async Task<T?> GetByIdAsync(TKey id, CancellationToken token = default)
     {
-        T? entity = await _dbSet.FindAsync(ConvertId(id), token);
-        return entity;
+        return await _dbSet.FindAsync(new object[] { id }, token);
     }
 
     public async Task<T> CreateAsync(T entity, CancellationToken token = default)
@@ -45,34 +33,32 @@ public class Repository<T> : IRepository<T> where T : class
         return entity;
     }
 
-    public async Task DeleteAsync(string id, CancellationToken token = default)
-    {
-        T? entity = await GetByIdAsync(id);
-        if (entity != null)
-            _dbSet.Remove(entity);
-    }
-
     public Task<T> UpdateAsync(T entity, CancellationToken token = default)
     {
         _dbSet.Update(entity);
         return Task.FromResult(entity);
     }
 
+    public async Task DeleteAsync(TKey id, CancellationToken token = default)
+    {
+        var entity = await GetByIdAsync(id, token);
+        if (entity != null)
+            _dbSet.Remove(entity);
+    }
+
+    public async Task<bool> ExistsAsync(TKey id, CancellationToken token = default)
+    {
+        var entity = await GetByIdAsync(id, token);
+        return entity != null;
+    }
+
+    public Task<IEnumerable<T>> FindAsync(Func<T, bool> predicate, CancellationToken token = default)
+    {
+        return Task.FromResult(_dbSet.AsEnumerable().Where(predicate));
+    }
+
     public async Task SaveChangesAsync(CancellationToken token = default)
     {
         await _context.SaveChangesAsync(token);
-    }
-
-    private static object ConvertId(string id)
-    {
-        var type = typeof(T).GetProperty("Id")?.PropertyType;
-
-        if (type == typeof(Guid))
-            return Guid.Parse(id);
-
-        if (type == typeof(int))
-            return int.Parse(id);
-
-        return id;
     }
 }

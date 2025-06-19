@@ -1,11 +1,12 @@
 ﻿using Intravision.Vending.Core.Abstractions.Repositories;
+using Intravision.Vending.Core.DTO.Product;
 using Intravision.Vending.Core.Models;
 using Intravision.Vending.DAL.Context;
 using Microsoft.EntityFrameworkCore;
 
 namespace Intravision.Vending.DAL.Repositories;
 
-public class ProductRepository : Repository<Product>, IProductRepository
+public class ProductRepository : Repository<Product, Guid>, IProductRepository
 {
     public ProductRepository(EfContext context)
         : base(context)

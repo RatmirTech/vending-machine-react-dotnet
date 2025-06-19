@@ -4,7 +4,7 @@ using Intravision.Vending.DAL.Context;
 
 namespace Intravision.Vending.DAL.Repositories;
 
-public class OrderItemRepository : Repository<OrderItem>, IOrderItemRepository
+public class OrderItemRepository : Repository<OrderItem, Guid>, IOrderItemRepository
 {
     public OrderItemRepository(EfContext context)
         : base(context)

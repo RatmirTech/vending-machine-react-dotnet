@@ -2,6 +2,6 @@
 
 namespace Intravision.Vending.Core.Abstractions.Repositories;
 
-public interface IBrandRepository : IRepository<Brand>
+public interface IBrandRepository : IRepository<Brand, Guid>
 {
 }

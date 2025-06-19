@@ -2,6 +2,6 @@
 
 namespace Intravision.Vending.Core.Abstractions.Repositories;
 
-public interface IOrderItemRepository : IRepository<OrderItem>
+public interface IOrderItemRepository : IRepository<OrderItem, Guid>
 {
 }
