@@ -73,7 +73,7 @@ public class ProductService : IProductService
         CancellationToken token = default)
     {
         IEnumerable<Product> products = await _products.GetFilteredAsync(brandId, minPrice, maxPrice, token);
-        IEnumerable<ProductGetResponse> responses = _mapper.Map<IEnumerable<ProductGetResponse>>(products);
+        IEnumerable<ProductGetResponse> responses = _mapper.Map<IEnumerable<ProductGetResponse>>(products.OrderBy(x => x.Name).ToList());
         foreach (ProductGetResponse response in responses)
         {
             IEnumerable<ProductImage> images = await _images.GetByProductIdAsync(response.Id, token);

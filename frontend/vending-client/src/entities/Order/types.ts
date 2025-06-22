@@ -13,7 +13,7 @@ export interface OrderResponse {
     totalAmount: number;
     changeAmount?: number;
     changeCoins?: Record<number, number>;
-    changeToGive?: Record<number, number>; // Added for backend compatibility
+    changeToGive?: Record<number, number>;
     success: boolean;
     message?: string;
 }

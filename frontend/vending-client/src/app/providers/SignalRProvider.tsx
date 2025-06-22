@@ -18,7 +18,7 @@ export const SignalRProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     useEffect(() => {
         const connection = new HubConnectionBuilder()
-            .withUrl('https://localhost:7097/vendinghub', { withCredentials: true })
+            .withUrl(import.meta.env.VITE_SIGNALR_HUB_URL, { withCredentials: true })
             .withAutomaticReconnect()
             .build();
 

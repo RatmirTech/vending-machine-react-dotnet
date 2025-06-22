@@ -41,7 +41,7 @@ public class VendingHub : Hub
         }
 
         await Clients.Caller.SendAsync("SessionStarted", sessionId);
-        _logger.LogInformation($"{nameof(VendingHub)} {sessionId} подключён");
+        _logger.LogInformation(message: $"{nameof(VendingHub)} {sessionId} подключён");
         await base.OnConnectedAsync();
     }
 
@@ -50,7 +50,7 @@ public class VendingHub : Hub
         string connectionId = Context.ConnectionId;
         _sessionService.EndSession(connectionId);
 
-        _logger.LogInformation($"{connectionId} отключён от автомата");
+        _logger.LogInformation(message: $"{connectionId} отключён от автомата");
 
         await base.OnDisconnectedAsync(exception);
     }

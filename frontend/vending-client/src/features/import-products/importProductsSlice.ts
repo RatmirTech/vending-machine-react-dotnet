@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { importProductsApi } from './importProductsApi';
+import { clearCart } from '../cart/cartSlice';
+import { fetchProducts } from '../products/productsSlice';
 
 interface ImportProductsState {
     loading: boolean;
@@ -15,10 +17,19 @@ const initialState: ImportProductsState = {
 
 export const importProducts = createAsyncThunk<void, File, { rejectValue: string }>(
     'importProducts/import',
-    async (file, { rejectWithValue }) => {
+    async (file, { rejectWithValue, dispatch  }) => {
         try {
             await importProductsApi(file);
             alert('Импорт товаров успешно завершён');
+            dispatch(clearCart());
+
+            dispatch(
+                fetchProducts({
+                    brand: undefined,
+                    minPrice: undefined,
+                    maxPrice: undefined,
+                })
+            );
             return;
         } catch (err) {
             if (err instanceof Error) {

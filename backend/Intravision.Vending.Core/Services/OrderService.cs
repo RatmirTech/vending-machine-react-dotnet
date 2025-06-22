@@ -139,8 +139,13 @@ public class OrderService : IOrderService
             if (!productMap.TryGetValue(item.ProductId, out var product))
                 throw new ArgumentNullException(nameof(item.ProductId));
 
+            if (product.QuantityInStock < item.Quantity)
+                throw new ArgumentOutOfRangeException(nameof(item.Quantity));
+
+            product.QuantityInStock -= item.Quantity;
+
             var brand = await _brandRepository.GetByIdAsync(product.BrandId, token);
-            var orderItem = CreateOrderItem(order.Id, item.Quantity, product, brand?.Name);
+            var orderItem = CreateOrderItem(order.Id, item.Quantity, product, brand?.Name ?? string.Empty);
 
             order.TotalPrice += orderItem.Quantity * orderItem.UnitPrice * 100;
             await _orderItemRepository.CreateAsync(orderItem, token);

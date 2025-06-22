@@ -1,0 +1,11 @@
+services:
+  frontend:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: vending_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production

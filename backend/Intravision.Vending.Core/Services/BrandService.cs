@@ -47,6 +47,6 @@ public class BrandService : IBrandService
     public async Task<IEnumerable<BrandGetResponse>> GetAll(CancellationToken token)
     {
         IEnumerable<Brand> brands = await _rep.GetAllAsync(token);
-        return _mapper.Map<IEnumerable<BrandGetResponse>>(brands);
+        return _mapper.Map<IEnumerable<BrandGetResponse>>(brands.OrderBy(x => x.Name).ToList());
     }
 }

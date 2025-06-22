@@ -1,3 +1,4 @@
+// PaymentPage.tsx
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../shared/lib/hooks';
 import {
@@ -8,8 +9,6 @@ import {
 import {
     selectInsertedCoins,
     selectTotalInserted,
-    incrementCoin,
-    decrementCoin,
     setCoinCount,
     createOrder
 } from '../../features/order/orderSlice';
@@ -17,10 +16,10 @@ import {
     Container,
     Typography,
     Box,
-    Divider,
-    Grid
+    Divider
 } from '@mui/material';
-import { CoinInputRow } from '../../shared/ui/Coins/CoinInputRow';
+import PaymentHeader from '../../shared/ui/Payment/PaymentHeader';
+import PaymentRow from '../../shared/ui/Payment/PaymentRow'; // ваш компонент
 import SideBarPayment from '../../widgets/SideBar/SideBarPayment';
 
 const COIN_DENOMINATIONS = [1, 2, 5, 10];
@@ -64,33 +63,21 @@ export const PaymentPage = () => {
     };
 
     return (
-        <Container maxWidth="md" sx={{ py: 4 }}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
             <Typography variant="h4" sx={{ mb: 4 }}>
                 Оплата
             </Typography>
 
-            <Box sx={{ mb: 4 }}>
-                <Grid container sx={{ mb: 2, fontWeight: 'bold' }} alignItems="center">
-                    <Grid size={{xs:4}} sx={{ textAlign: 'center' }}>
-                        <Typography>Номинал</Typography>
-                    </Grid>
-                    <Grid size={{xs:4}} sx={{ textAlign: 'right' }}>
-                        <Typography>Количество</Typography>
-                    </Grid>
-                    <Grid size={{xs:4}} sx={{ textAlign: 'center' }}>
-                        <Typography>Сумма</Typography>
-                    </Grid>
-                </Grid>
-                <Divider sx={{my:2}} />
+            <PaymentHeader />
 
+            <Box sx={{ mb: 4 }}>
                 {COIN_DENOMINATIONS.map((denomination) => (
-                    <CoinInputRow
+                    <PaymentRow
                         key={denomination}
-                        denomination={denomination}
-                        count={insertedCoins[denomination]}
-                        onIncrement={() => dispatch(incrementCoin(denomination))}
-                        onDecrement={() => dispatch(decrementCoin(denomination))}
-                        onChange={(value) => handleCoinChange(denomination, value)}
+                        nominal={denomination}
+                        quantity={insertedCoins[denomination]}
+                        quantityInStock={-1}
+                        onQuantityChange={(qty) => handleCoinChange(denomination, qty)}
                     />
                 ))}
             </Box>
@@ -116,7 +103,6 @@ export const PaymentPage = () => {
                     {totalInserted} руб.
                 </Typography>
             </Box>
-
 
             <SideBarPayment
                 onNext={handlePayment}

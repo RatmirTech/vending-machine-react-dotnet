@@ -1,0 +1,25 @@
+# Node.js / Frontend
+node_modules
+build
+dist
+.cache
+*.log
+.env.local
+.env.development
+.env.test
+
+# OS/system
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose.override.yml
+
+# Temporary
+*.tmp
+*.swp
+*.bak

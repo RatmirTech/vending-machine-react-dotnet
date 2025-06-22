@@ -9,7 +9,7 @@ import { Box, Skeleton, Card, CardContent } from '@mui/material';
 
 export const ProductList = () => {
     const dispatch = useAppDispatch();
-    const { items, loading, error } = useAppSelector((state: RootState) => state.products);
+    const { items, loading } = useAppSelector((state: RootState) => state.products);
     const { selectedBrand, priceRange } = useAppSelector((state: RootState) => state.filters);
     const cartItems = useAppSelector((state: RootState) => state.cart.items);
 
