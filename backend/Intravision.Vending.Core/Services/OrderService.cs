@@ -7,22 +7,57 @@ using Microsoft.Extensions.Logging;
 
 namespace Intravision.Vending.Core.Services;
 
+/// <summary>
+/// Сервис для обработки заказов.
+/// Реализует бизнес-логику создания заказов, работы с товарами, монетами и брендами.
+/// </summary>
 public class OrderService : IOrderService
 {
+    /// <summary>
+    /// Логгер для записи действий и ошибок сервиса заказов.
+    /// </summary>
     private readonly ILogger<OrderService> _logger;
 
+    /// <summary>
+    /// Репозиторий для управления заказами.
+    /// </summary>
     private readonly IOrderRepository _orderRepository;
 
+    /// <summary>
+    /// Репозиторий для управления позициями заказов.
+    /// </summary>
     private readonly IOrderItemRepository _orderItemRepository;
 
+    /// <summary>
+    /// Репозиторий для доступа к товарам.
+    /// </summary>
     private readonly IProductRepository _productRepository;
 
+    /// <summary>
+    /// Репозиторий для управления монетами (используется для расчёта сдачи).
+    /// </summary>
     private readonly ICoinRepository _coinRepository;
 
+    /// <summary>
+    /// Репозиторий для работы с брендами товаров.
+    /// </summary>
     private readonly IBrandRepository _brandRepository;
 
+    /// <summary>
+    /// Маппер для преобразования DTO и сущностей.
+    /// </summary>
     private readonly IMapper _mapper;
 
+    /// <summary>
+    /// Создаёт экземпляр сервиса заказов.
+    /// </summary>
+    /// <param name="logger">Логгер для логирования операций сервиса.</param>
+    /// <param name="order">Репозиторий заказов.</param>
+    /// <param name="item">Репозиторий позиций заказов.</param>
+    /// <param name="mapper">AutoMapper для преобразования моделей.</param>
+    /// <param name="productRepository">Репозиторий товаров.</param>
+    /// <param name="coinRepository">Репозиторий монет для расчёта сдачи.</param>
+    /// <param name="brandRepository">Репозиторий брендов.</param>
     public OrderService(
         ILogger<OrderService> logger,
         IOrderRepository order,
@@ -45,110 +80,165 @@ public class OrderService : IOrderService
         OrderCreateRequest request,
         CancellationToken token = default)
     {
-        if (request is null)
+        ValidateRequest(request);
+
+        var productMap = await LoadProductsAsync(request.Items, token);
+        var order = await InitializeOrderAsync(token);
+
+        await AddItemsToOrderAsync(order, request.Items, productMap, token);
+        int totalPrice = order.TotalPrice;
+
+        int insertedTotal = CalculateInsertedTotal(request.InsertedCoins);
+        EnsureSufficientFunds(insertedTotal, totalPrice);
+
+        var allCoins = (await _coinRepository.GetAllAsync(token)).ToList();
+        await AddInsertedCoinsAsync(request.InsertedCoins, allCoins, token);
+
+        int changeAmount = insertedTotal - totalPrice;
+        var changeToGive = await TryDispenseChangeAsync(changeAmount, allCoins, token);
+
+        await SaveAllAsync(token);
+        return BuildResponse(changeAmount, changeToGive);
+    }
+
+    private void ValidateRequest(OrderCreateRequest request)
+    {
+        if (request == null)
             throw new ArgumentNullException(nameof(request));
+    }
 
-        var productIds = request.Items.Select(i => i.ProductId).ToList();
+    private async Task<Dictionary<Guid, Product>> LoadProductsAsync(
+        IEnumerable<OrderItemDto> items,
+        CancellationToken token)
+    {
+        var ids = items.Select(i => i.ProductId).ToList();
+        var products = await _productRepository.FindAsync(p => ids.Contains(p.Id), token);
+        return products.ToDictionary(p => p.Id);
+    }
 
-        // все товары которые выбраны для заказа
-        var products = await _productRepository.FindAsync(p => productIds.Contains(p.Id), token);
-
-        var productMap = products.ToDictionary(p => p.Id);
-
-
+    private async Task<Order> InitializeOrderAsync(CancellationToken token)
+    {
         var order = new Order
         {
             Id = Guid.NewGuid(),
             CreatedAt = DateTime.UtcNow,
             TotalPrice = 0
         };
-
         await _orderRepository.CreateAsync(order, token);
+        return order;
+    }
 
-        // проверка наличия товаров и подсчёт общей стоимости заказа
-        foreach (var item in request.Items)
+    private async Task AddItemsToOrderAsync(
+        Order order,
+        IEnumerable<OrderItemDto> items,
+        Dictionary<Guid, Product> productMap,
+        CancellationToken token)
+    {
+        foreach (var item in items)
         {
             if (!productMap.TryGetValue(item.ProductId, out var product))
                 throw new ArgumentNullException(nameof(item.ProductId));
 
             var brand = await _brandRepository.GetByIdAsync(product.BrandId, token);
-
-            var orderItem = new OrderItem
-            {
-                BrandName = brand?.Name ?? string.Empty,
-                ProductName = product.Name,
-                OrderId = order.Id,
-                Quantity = item.Quantity,
-                UnitPrice = product.Price
-            };
+            var orderItem = CreateOrderItem(order.Id, item.Quantity, product, brand?.Name);
 
             order.TotalPrice += orderItem.Quantity * orderItem.UnitPrice * 100;
             await _orderItemRepository.CreateAsync(orderItem, token);
         }
+    }
 
-        // сумма внесённых монет
-        int insertedTotal = request.InsertedCoins.Sum(c => c.Key * c.Value * 100);
-
-        if (insertedTotal < order.TotalPrice)
-            throw new Exception("Недостаточно средств.");
-
-        var allCoins = (await _coinRepository.GetAllAsync(token)).ToList();
-
-        //добавить монеты пользователя в автомат
-        foreach (var (denomination, quantityToAdd) in request.InsertedCoins)
+    private OrderItem CreateOrderItem(
+        Guid orderId,
+        int quantity,
+        Product product,
+        string brandName)
+    {
+        return new OrderItem
         {
-            int d = denomination * 100;
-            Coin? coin = allCoins.FirstOrDefault(c => c.Denomination == d);
-            if (coin is null)
-                throw new ArgumentNullException(nameof(coin));
+            OrderId = orderId,
+            Quantity = quantity,
+            UnitPrice = product.Price,
+            ProductName = product.Name,
+            BrandName = brandName ?? string.Empty
+        };
+    }
 
-            coin.Quantity += quantityToAdd;
+    private int CalculateInsertedTotal(
+        IDictionary<int, int> insertedCoins)
+    {
+        return insertedCoins.Sum(c => c.Key * c.Value * 100);
+    }
+
+    private void EnsureSufficientFunds(int inserted, int price)
+    {
+        if (inserted < price)
+            throw new InvalidOperationException("Недостаточно средств.");
+    }
+
+    private async Task AddInsertedCoinsAsync(
+        IDictionary<int, int> insertedCoins,
+        List<Coin> allCoins,
+        CancellationToken token)
+    {
+        foreach (var (denom, qty) in insertedCoins)
+        {
+            int d = denom * 100;
+            var coin = allCoins.FirstOrDefault(c => c.Denomination == d)
+                       ?? throw new ArgumentNullException(nameof(denom));
+
+            coin.Quantity += qty;
+            await _coinRepository.UpdateAsync(coin, token);
+        }
+    }
+
+    private async Task<Dictionary<int, int>> TryDispenseChangeAsync(
+        int changeAmount,
+        List<Coin> allCoins,
+        CancellationToken token)
+    {
+        if (changeAmount <= 0)
+            return new Dictionary<int, int>();
+
+        Dictionary<int, int> change;
+        try
+        {
+            change = CalculateChange(changeAmount, allCoins);
+        }
+        catch
+        {
+            return new Dictionary<int, int>();
+        }
+
+        foreach (var (denom, qty) in change.Where(x => x.Value > 0))
+        {
+            var coin = allCoins.First(c => c.Denomination == denom);
+            coin.Quantity -= qty;
             await _coinRepository.UpdateAsync(coin, token);
         }
 
-        #region[Проверка возможности выдачи сдачи]
-        // сдача
-        int changeAmount = insertedTotal - order.TotalPrice;
+        return change;
+    }
 
-        Dictionary<int, int> changeToGive = new();
-
-        if (changeAmount > 0)
-        {
-            try
-            {
-                changeToGive = CalculateChange(changeAmount, allCoins);
-            }
-            catch (Exception ex)
-            {
-                return new OrderCreateResponse()
-                {
-                    ChangeAmount = 0,
-                    Success = false,
-                    Message = "Извините, в данный момент мы не можем продать вам товар по причине того, что автомат не может выдать вам нужную сдачу"
-                };
-            }
-
-            foreach (var (denomination, qty) in changeToGive)
-            {
-                var coin = allCoins.First(c => c.Denomination == denomination);
-                coin.Quantity -= qty;
-                await _coinRepository.UpdateAsync(coin, token);
-            }
-        }
-
+    private async Task SaveAllAsync(CancellationToken token)
+    {
         await _coinRepository.SaveChangesAsync(token);
         await _orderRepository.SaveChangesAsync(token);
         await _orderItemRepository.SaveChangesAsync(token);
+    }
 
-        return new OrderCreateResponse()
+    private OrderCreateResponse BuildResponse(
+        int changeAmount,
+        Dictionary<int, int> changeToGive)
+    {
+        return new OrderCreateResponse
         {
             ChangeAmount = changeAmount / 100,
+            ChangeToGive = changeToGive.ToDictionary(k => k.Key / 100, v => v.Value),
             Success = true,
             Message = changeAmount > 0
                 ? $"Ваш заказ принят. Сдача: {changeAmount / 100} руб."
                 : "Ваш заказ принят. Сдача не требуется."
         };
-        #endregion
     }
 
     private static Dictionary<int, int> CalculateChange(
@@ -163,17 +253,32 @@ public class OrderService : IOrderService
         foreach (ref readonly var coin in coins)
         {
             int coinValue = coin.Denomination;
-            if (coinValue == 0 || changeAmount < coinValue) continue;
+            if (coinValue == 0)
+            {
+                result[coinValue] = 0;
+                continue;
+            }
 
-            int maxUsable = Math.Min(changeAmount / coinValue, coin.Quantity);
-            if (maxUsable == 0) continue;
+            int maxUsable = 0;
+
+            if (changeAmount >= coinValue)
+            {
+                maxUsable = Math.Min(changeAmount / coinValue, coin.Quantity);
+                changeAmount -= maxUsable * coinValue;
+            }
 
             result[coinValue] = maxUsable;
-            changeAmount -= maxUsable * coinValue;
 
-            if (changeAmount == 0) return result;
+            if (changeAmount == 0)
+                continue;
         }
 
-        throw new Exception();
+        if (changeAmount > 0)
+        {
+            throw new Exception();
+        }
+
+        return result;
     }
+
 }

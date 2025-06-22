@@ -12,7 +12,6 @@ interface SliderProps {
 }
 
 export const SliderRange: FC<SliderProps> = ({ label, min, max, value, onChange }) => {
-    
     const [internalValue, setInternalValue] = useState<[number, number]>(value);
 
     useEffect(() => {
@@ -27,11 +26,13 @@ export const SliderRange: FC<SliderProps> = ({ label, min, max, value, onChange 
     };
 
     return (
-        <Box sx={{ width: '100%', maxWidth: 400, px: 2 }}>
-            <Typography variant="body2" sx={{ mb: 1 }}>{label}</Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                <Typography variant="caption">{min} руб.</Typography>
-                <Typography variant="caption">{max} руб.</Typography>
+        <Box sx={{ width: '100%' }}>
+            <Box sx={{ mb: 1 }}>
+            <Typography variant="body2">{label}</Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="caption">{internalValue[0]} руб.</Typography>
+                <Typography variant="caption">{internalValue[1]} руб.</Typography>
+            </Box>
             </Box>
             <Slider
                 value={internalValue}
@@ -40,7 +41,7 @@ export const SliderRange: FC<SliderProps> = ({ label, min, max, value, onChange 
                 onChange={handleChange}
                 valueLabelDisplay="auto"
                 disableSwap
-                sx={{ mt: 0, color: 'primary.main' }}
+                sx={{ color: 'grey.500' }}
             />
         </Box>
     );

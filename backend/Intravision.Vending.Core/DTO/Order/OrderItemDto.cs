@@ -1,5 +1,8 @@
 ﻿namespace Intravision.Vending.Core.DTO.Order;
 
+/// <summary>
+/// Дто напитка из заказа
+/// </summary>
 public class OrderItemDto
 {
     /// <summary>

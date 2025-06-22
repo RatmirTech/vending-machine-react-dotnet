@@ -1,0 +1,130 @@
+import { useNavigate } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '../../shared/lib/hooks';
+import {
+    selectCartItems,
+    selectCartTotal,
+    clearCart
+} from '../../features/cart/cartSlice';
+import {
+    selectInsertedCoins,
+    selectTotalInserted,
+    incrementCoin,
+    decrementCoin,
+    setCoinCount,
+    createOrder
+} from '../../features/order/orderSlice';
+import {
+    Container,
+    Typography,
+    Box,
+    Divider,
+    Grid
+} from '@mui/material';
+import { CoinInputRow } from '../../shared/ui/Coins/CoinInputRow';
+import SideBarPayment from '../../widgets/SideBar/SideBarPayment';
+
+const COIN_DENOMINATIONS = [1, 2, 5, 10];
+
+export const PaymentPage = () => {
+    const navigate = useNavigate();
+    const dispatch = useAppDispatch();
+    const cartItems = useAppSelector(selectCartItems);
+    const cartTotal = useAppSelector(selectCartTotal);
+    const insertedCoins = useAppSelector(selectInsertedCoins);
+    const totalInserted = useAppSelector(selectTotalInserted);
+
+    const isPaymentSufficient = totalInserted >= cartTotal;
+
+    const handleCoinChange = (denomination: number, count: number) => {
+        dispatch(setCoinCount({ denomination, count: Math.max(0, count) }));
+    };
+
+    const handlePayment = async () => {
+        if (!isPaymentSufficient) return;
+
+        const orderData = {
+            items: cartItems.map(item => ({
+                productId: item.id,
+                quantity: item.quantity
+            })),
+            insertedCoins
+        };
+
+        try {
+            await dispatch(createOrder(orderData)).unwrap();
+            dispatch(clearCart());
+            navigate('/success');
+        } catch (error) {
+            console.error('Payment failed:', error);
+        }
+    };
+
+    const handleGoBack = () => {
+        navigate('/cart');
+    };
+
+    return (
+        <Container maxWidth="md" sx={{ py: 4 }}>
+            <Typography variant="h4" sx={{ mb: 4 }}>
+                Оплата
+            </Typography>
+
+            <Box sx={{ mb: 4 }}>
+                <Grid container sx={{ mb: 2, fontWeight: 'bold' }} alignItems="center">
+                    <Grid size={{xs:4}} sx={{ textAlign: 'center' }}>
+                        <Typography>Номинал</Typography>
+                    </Grid>
+                    <Grid size={{xs:4}} sx={{ textAlign: 'right' }}>
+                        <Typography>Количество</Typography>
+                    </Grid>
+                    <Grid size={{xs:4}} sx={{ textAlign: 'center' }}>
+                        <Typography>Сумма</Typography>
+                    </Grid>
+                </Grid>
+                <Divider sx={{my:2}} />
+
+                {COIN_DENOMINATIONS.map((denomination) => (
+                    <CoinInputRow
+                        key={denomination}
+                        denomination={denomination}
+                        count={insertedCoins[denomination]}
+                        onIncrement={() => dispatch(incrementCoin(denomination))}
+                        onDecrement={() => dispatch(decrementCoin(denomination))}
+                        onChange={(value) => handleCoinChange(denomination, value)}
+                    />
+                ))}
+            </Box>
+
+            <Divider sx={{ my: 2 }} />
+            <Box sx={{ display: 'flex', justifyContent: 'right', alignItems: 'flex-end', mb: 4 }}>
+                <Typography sx={{ mr: 4, fontSize: 18 }}>
+                    Итоговая сумма
+                </Typography>
+                <Typography sx={{ fontWeight: 'bold', fontSize: 26, mr: 6 }}>
+                    {cartTotal} руб.
+                </Typography>
+                <Typography sx={{ mr: 4, fontSize: 18 }}>
+                    Вы внесли
+                </Typography>
+                <Typography
+                    sx={{
+                        color: isPaymentSufficient ? 'green' : 'red',
+                        fontWeight: 'bold',
+                        fontSize: 26,
+                    }}
+                >
+                    {totalInserted} руб.
+                </Typography>
+            </Box>
+
+
+            <SideBarPayment
+                onNext={handlePayment}
+                onBack={handleGoBack}
+                nextLabel="Оплатить"
+                backLabel="Вернуться"
+                nextDisabled={!isPaymentSufficient}
+            />
+        </Container>
+    );
+};

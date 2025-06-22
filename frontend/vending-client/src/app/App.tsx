@@ -1,10 +1,19 @@
 import { StoreProvider } from './providers/StoreProvider';
 import { SignalRProvider, useSignalR } from './providers/SignalRProvider';
-import { DrinksCatalogPage } from '../pages/DrinksCatalogPage/DrinksCatalogPage';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { AppRouter } from './router';
 
-const BusyMessage: React.FC = () => {
+const BusyMessage: React.FC<{ setIsLocked: (locked: boolean) => void }> = ({ setIsLocked }) => {
   const { message } = useSignalR();
+
+  useEffect(() => {
+    if (message === 'Извините, в данный момент автомат занят') {
+      setIsLocked(true);
+    } else {
+      setIsLocked(false);
+    }
+  }, [message, setIsLocked]);
+
   if (message === 'Извините, в данный момент автомат занят') {
     return (
       <div style={{
@@ -25,15 +34,18 @@ const BusyMessage: React.FC = () => {
       </div>
     );
   }
+
   return null;
 };
 
 function App() {
+  const [isLocked, setIsLocked] = useState(false);
+
   return (
     <StoreProvider>
       <SignalRProvider>
-        <BusyMessage />
-        <DrinksCatalogPage />
+        <BusyMessage setIsLocked={setIsLocked} />
+        {!isLocked && <AppRouter />}
       </SignalRProvider>
     </StoreProvider>
   );

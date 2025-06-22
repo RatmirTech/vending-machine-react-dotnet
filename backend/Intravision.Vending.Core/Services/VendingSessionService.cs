@@ -3,8 +3,15 @@ using System.Collections.Concurrent;
 
 namespace Intravision.Vending.Core.Services;
 
+/// <summary>
+/// Сервис управления сессиями пользователя в торговом автомате.
+/// Используется для хранения состояния взаимодействия
+/// </summary>
 public class VendingSessionService : IVendingSessionService
 {
+    /// <summary>
+    /// Потокобезопасный словарь для хранения сессий.
+    /// </summary>
     private static readonly ConcurrentDictionary<string, string> _sessions = new();
 
     public string? StartSession(string machineKey, string connectionId)

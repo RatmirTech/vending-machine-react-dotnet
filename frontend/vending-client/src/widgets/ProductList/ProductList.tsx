@@ -1,45 +1,26 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { Product } from '../../entities/Product/types';
 import { useAppDispatch, useAppSelector } from '../../shared/lib/hooks';
 import { fetchProducts } from '../../features/products/productsSlice';
+import { toggleProduct } from '../../features/cart/cartSlice';
 import { ProductCard } from '../../shared/ui/ProductCard/ProductCard';
 import type { RootState } from '../../app/store';
-import Grid from '@mui/material/Grid';
+import { Box, Skeleton, Card, CardContent } from '@mui/material';
 
 export const ProductList = () => {
     const dispatch = useAppDispatch();
     const { items, loading, error } = useAppSelector((state: RootState) => state.products);
     const { selectedBrand, priceRange } = useAppSelector((state: RootState) => state.filters);
+    const cartItems = useAppSelector((state: RootState) => state.cart.items);
 
-    // Получаем корзину из localStorage
-    const cart: (Product & { quantity: number })[] = useMemo(() => {
-        try {
-            return JSON.parse(localStorage.getItem('cart') || '[]');
-        } catch {
-            return [];
-        }
-    }, []); // убрана лишняя зависимость
-
-    // Проверка, выбран ли товар
     const isProductSelected = useCallback(
-        (productId: string) => cart.some((item) => item.id === productId),
-        [cart]
+        (productId: string) => cartItems.some(item => item.id === productId),
+        [cartItems]
     );
 
-    // Обработчик выбора товара
     const handleSelect = useCallback((product: Product) => {
-        let newCart: (Product & { quantity: number })[] = [];
-        const existing = cart.find((item) => item.id === product.id);
-        if (!existing) {
-            newCart = [...cart, { ...product, quantity: 1 }];
-        } else {
-            newCart = cart.map((item) =>
-                item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-            );
-        }
-        localStorage.setItem('cart', JSON.stringify(newCart));
-        window.dispatchEvent(new Event('storage'));
-    }, [cart]);
+        dispatch(toggleProduct(product));
+    }, [dispatch]);
 
     useEffect(() => {
         dispatch(
@@ -51,20 +32,41 @@ export const ProductList = () => {
         );
     }, [dispatch, selectedBrand, priceRange]);
 
-    if (loading) return <div>Загрузка...</div>;
-    if (error) return <div>Ошибка: {error}</div>;
+    const skeletonArray = Array.from({ length: 8 });
+
+    const renderSkeletonCard = (_: unknown, index: number) => (
+        <Card key={index} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Skeleton variant="rectangular" height={200} animation="wave" />
+            <CardContent sx={{ flexGrow: 1 }}>
+                <Skeleton variant="text" height={30} width="80%" />
+                <Skeleton variant="text" height={24} width="40%" />
+                <Skeleton variant="rectangular" height={36} sx={{ mt: 2 }} />
+            </CardContent>
+        </Card>
+    );
 
     return (
-        <Grid container spacing={2}>
-            {items.map((product: Product) => (
-                <Grid key={product.id} size={{ xs: 12, sm: 4, md: 3 }}>
+        <Box sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(3, 1fr)',
+                lg: 'repeat(4, 1fr)'
+            }
+        }}>
+            {loading
+                ? skeletonArray.map(renderSkeletonCard)
+                : items.map((product: Product) => (
                     <ProductCard
+                        key={product.id}
                         product={product}
                         isSelected={isProductSelected(product.id)}
                         onSelect={handleSelect}
                     />
-                </Grid>
-            ))}
-        </Grid>
+                ))
+            }
+        </Box>
     );
 };

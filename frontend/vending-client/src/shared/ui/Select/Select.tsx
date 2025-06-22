@@ -16,8 +16,7 @@ interface SelectProps {
 
 export const Select: FC<SelectProps> = ({ label, options, value, onChange }) => {
     return (
-        <label>
-            <FormControl fullWidth>
+        <FormControl fullWidth>
             <InputLabel>{label}</InputLabel>
             <MuiSelect
                 value={value ?? ''}
@@ -26,12 +25,11 @@ export const Select: FC<SelectProps> = ({ label, options, value, onChange }) => 
             >
                 <MenuItem value="">Все</MenuItem>
                 {options.map(option => (
-                <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                </MenuItem>
+                    <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                    </MenuItem>
                 ))}
             </MuiSelect>
-            </FormControl>
-        </label>
+        </FormControl>
     );
 };

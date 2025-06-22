@@ -1,5 +1,8 @@
 ﻿namespace Intravision.Vending.Core.DTO.Order;
 
+/// <summary>
+/// Запрос на создание заказа
+/// </summary>
 public class OrderCreateRequest
 {
     /// <summary>

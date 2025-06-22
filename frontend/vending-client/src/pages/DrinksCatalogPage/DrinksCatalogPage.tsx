@@ -1,12 +1,12 @@
-import { Container } from '@mui/material';
+import { Container, Divider } from '@mui/material';
 import { Filters } from '../../widgets/Filters/Filters';
 import { ProductList } from '../../widgets/ProductList/ProductList';
 
 export const DrinksCatalogPage = () => {
     return (
-        <Container maxWidth="lg" sx={{ padding: 2 }}>
-            <h1>Газированные напитки</h1>
+        <Container sx={{ padding: 2 }}>
             <Filters />
+            <Divider sx={{ my: 3 }} />
             <ProductList />
         </Container>
     );
