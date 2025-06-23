@@ -1,7 +1,7 @@
 ﻿namespace Intravision.Vending.Core.DTO.Product;
 
 /// <summary>
-/// DTO-запрос на импорт товара из внешнего источника (например, Excel).
+/// DTO-запрос на импорт товара из внешнего источника
 /// </summary>
 /// <param name="Name">Название товара (может быть null).</param>
 /// <param name="Price">Цена товара.</param>

@@ -1,7 +1,7 @@
 ﻿namespace Intravision.Vending.Core.Models;
 
 /// <summary>
-/// Представляет монету в системе (например, для выдачи сдачи).
+/// Представляет монету в системе
 /// </summary>
 public class Coin
 {
@@ -11,7 +11,7 @@ public class Coin
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Номинал монеты (в условных единицах, напр. рубли).
+    /// Номинал монеты
     /// </summary>
     public int Denomination { get; set; }
 

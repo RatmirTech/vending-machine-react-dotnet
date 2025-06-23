@@ -1,6 +1,9 @@
 using Intravision.Vending.API.Hubs;
 using Intravision.Vending.Core;
 using Intravision.Vending.DAL;
+using Intravision.Vending.DAL.Context;
+using Intravision.Vending.DAL.Seed;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +39,13 @@ var con = builder.Configuration["ConnectionStrings:EfContext"];
 builder.Services.AddRepositories(con);
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<EfContext>();
+    dbContext.Database.Migrate();
+    SeedData.SeedCoins(dbContext);
+}
 
 app.UseCors();
 

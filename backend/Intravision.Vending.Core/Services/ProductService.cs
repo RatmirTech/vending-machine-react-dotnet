@@ -231,6 +231,9 @@ public class ProductService : IProductService
             if (!int.TryParse(priceText, out int price))
                 throw new ArgumentException($"[Строка {i}] Цена должна быть целым числом.", nameof(price));
 
+            if (price <= 0)
+                throw new ArgumentException($"[Строка {i}] Цена должна быть больше нуля.", nameof(price));
+
             if (!int.TryParse(quantityText, out int quantity))
                 throw new ArgumentException($"[Строка {i}] Количество должно быть целым числом.", nameof(quantity));
 
@@ -242,8 +245,6 @@ public class ProductService : IProductService
 
             if (string.IsNullOrWhiteSpace(imageUrl))
                 throw new ArgumentException($"[Строка {i}] Ссылка на изображение обязательна для заполнения.", nameof(imageUrl));
-
-
 
             var product = new ProductImportRequest(name, price, quantity, brand, imageUrl);
             products.Add(product);
