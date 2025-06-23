@@ -1,4 +1,3 @@
-// PaymentPage.tsx
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../shared/lib/hooks';
 import {
@@ -19,7 +18,7 @@ import {
     Divider
 } from '@mui/material';
 import PaymentHeader from '../../shared/ui/Payment/PaymentHeader';
-import PaymentRow from '../../shared/ui/Payment/PaymentRow'; // ваш компонент
+import PaymentRow from '../../shared/ui/Payment/PaymentRow';
 import SideBarPayment from '../../widgets/SideBar/SideBarPayment';
 
 const COIN_DENOMINATIONS = [1, 2, 5, 10];
