@@ -16,7 +16,7 @@ public class ProductGetResponse
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Цена товара в условных единицах (например, рубли).
+    /// Цена товара в условных единицах
     /// </summary>
     public int Price { get; set; }
 
